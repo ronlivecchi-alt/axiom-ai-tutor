@@ -456,6 +456,48 @@
 
     <!-- Initialize Lucide Icons -->
     <script>
+        <script>
+        // Switch between Teacher Dashboard and Student Practice Portal
+        function switchViewMode(mode) {
+            const studentView = document.getElementById('view-student-practice');
+            const teacherOverview = document.getElementById('tab-overview');
+            const teacherBtn = document.getElementById('mode-btn-teacher');
+            const studentBtn = document.getElementById('mode-btn-student');
+
+            if (mode === 'student') {
+                studentView.classList.remove('hidden');
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+                studentBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                teacherBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+            } else {
+                studentView.classList.add('hidden');
+                teacherOverview.classList.remove('hidden');
+                teacherBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                studentBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+            }
+        }
+
+        // Switch between Teacher Navigation Tabs (Overview, Curriculum, Roster, etc.)
+        function switchTab(tabId) {
+            document.getElementById('view-student-practice').classList.add('hidden');
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            const selectedTab = document.getElementById('tab-' + tabId);
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+            }
+        }
+
+        // Placeholder functions to prevent button click errors
+        function loadPracticeProblem() {}
+        function loadUnitPreset() {}
+        function toggleWorkedExample() {}
+        function submitStudentAnswer() {}
+        function sendPracticeChatMessage() {}
+        function openInviteModal() {}
+        function toggleAccessibilityPanel() {}
+        function readQuestionAloud() {}
+    </script>
         lucide.createIcons();
     </script>
 </body>
