@@ -491,7 +491,50 @@
         function loadPracticeProblem() {}
         function loadUnitPreset() {}
         function toggleWorkedExample() {}
-        function submitStudentAnswer() {}
+        async function submitStudentAnswer() {
+            // Grab the input text area and feedback box elements from the DOM
+            const inputField = document.getElementById('practice-user-answer') || document.querySelector('textarea');
+            const feedbackBox = document.getElementById('practice-feedback-box');
+            
+            if (!inputField || !inputField.value.trim()) return;
+
+            // Show loading state to the user
+            if (feedbackBox) {
+                feedbackBox.classList.remove('hidden');
+                feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-blue-50 text-blue-800 border border-blue-200";
+                feedbackBox.innerText = "Analyzing answer with Axiom AI...";
+            }
+
+            try {
+                // Send student answer to the Python backend API
+                const response = await fetch('/api/evaluate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        problem_id: "prob_1",
+                        user_answer: inputField.value
+                    })
+                });
+
+                const result = await response.json();
+
+                // Update UI based on API response
+                if (feedbackBox) {
+                    if (result.correct) {
+                        feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-emerald-50 text-emerald-800 border border-emerald-200";
+                        feedbackBox.innerText = "Correct! " + result.feedback;
+                    } else {
+                        feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-amber-50 text-amber-800 border border-amber-200";
+                        feedbackBox.innerText = "Try again: " + result.feedback;
+                    }
+                }
+            } catch (error) {
+                if (feedbackBox) {
+                    feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-red-50 text-red-800 border border-red-200";
+                    feedbackBox.innerText = "Error connecting to AI API endpoint.";
+                }
+            }
+        }
         function sendPracticeChatMessage() {}
         function openInviteModal() {}
         function toggleAccessibilityPanel() {}
