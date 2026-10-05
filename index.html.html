@@ -454,9 +454,8 @@
         </main>
     </div>
 
-    <!-- Initialize Lucide Icons -->
+    <!-- Script section -->
     <script>
-        <script>
         // Switch between Teacher Dashboard and Student Practice Portal
         function switchViewMode(mode) {
             const studentView = document.getElementById('view-student-practice');
@@ -476,8 +475,8 @@
                 studentBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
             }
         }
-        </script>
-        // Switch between Teacher Navigation Tabs (Overview, Curriculum, Roster, etc.)
+
+        // Switch between Teacher Navigation Tabs
         function switchTab(tabId) {
             document.getElementById('view-student-practice').classList.add('hidden');
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
@@ -488,7 +487,7 @@
             }
         }
 
-        // Placeholder functions to prevent button click errors
+        // Placeholders to prevent click errors
         function loadPracticeProblem() {}
         function loadUnitPreset() {}
         function toggleWorkedExample() {}
@@ -497,7 +496,8 @@
         function openInviteModal() {}
         function toggleAccessibilityPanel() {}
         function readQuestionAloud() {}
-    
+
+        // Initialize Lucide Icons
         lucide.createIcons();
     </script>
 </body>
