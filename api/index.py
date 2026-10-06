@@ -1,65 +1,73 @@
+import os
+import psycopg2
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Optional
 
 app = FastAPI()
 
-# Input format sent from index.html
-class AnswerSubmission(BaseModel):
-    problem_id: str
+def get_db_connection():
+    # Supabase / Vercel provides POSTGRES_URL or DATABASE_URL
+    db_url = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+    return psycopg2.connect(db_url)
+
+class EvaluationRequest(BaseModel):
+    student_id: str
+    question_id: str
     user_answer: str
-    student_id: Optional[str] = "student_guest"
-
-class HintRequest(BaseModel):
-    problem_id: str
-    hint_level: int
-
-# --- API ENDPOINTS ---
 
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "Axiom AI Tutor API"}
 
 @app.post("/api/evaluate")
-def evaluate_answer(data: AnswerSubmission):
-    """
-    Evaluates the student's submitted math answer.
-    Replace/expand this function with your actual Python notebook logic.
-    """
-    user_ans = data.user_answer.strip().lower()
-    
-    # Placeholder logic (Replace with your notebook's solver/evaluator)
-    is_correct = user_ans in ["5/6", "5 / 6", "0.833", "0.83"]
-    
-    if is_correct:
-        feedback = "Excellent! You correctly identified the common denominator."
-        misconception = None
-    else:
-        # Example misconception detection logic
-        if "+" in user_ans or "2/7" in user_ans:
-            misconception = "Added Denominators Directly"
-            feedback = "Remember: When adding fractions, you must find a common denominator first, not add top and bottom across!"
-        else:
-            misconception = "Calculation Error"
-            feedback = "Not quite. Check your common denominator calculations and try again."
+def evaluate_answer(req: EvaluationRequest):
+    # Place your AI grading logic here
+    is_correct = req.user_answer.strip() == "42"
+    misconception = None if is_correct else "Arithmetic error"
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO student_submissions (student_id, question_id, user_answer, is_correct, misconception_tag)
+        VALUES (%s, %s, %s, %s, %s)
+        """,
+        (req.student_id, req.question_id, req.user_answer, is_correct, misconception)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
     return {
-        "correct": is_correct,
-        "feedback": feedback,
-        "flagged_misconception": misconception,
-        "myp_criterion": "Criterion A"
+        "is_correct": is_correct,
+        "misconception_tag": misconception,
+        "feedback": "Great job!" if is_correct else "Check your calculations."
     }
 
-@app.post("/api/hint")
-def generate_hint(data: HintRequest):
-    """
-    Generates a Socratic hint based on requested hint level.
-    """
-    hints = {
-        1: "What is the lowest common multiple (LCM) of the denominators 2 and 3?",
-        2: "Convert 1/2 and 1/3 into equivalent fractions with a denominator of 6.",
-        3: "1/2 = 3/6 and 1/3 = 2/6. Now add the numerators: 3/6 + 2/6 = ?"
-    }
+@app.get("/api/metrics")
+def get_teacher_metrics():
+    conn = get_db_connection()
+    cur = conn.cursor()
     
-    selected_hint = hints.get(data.hint_level, "Take a step back and identify what the question is asking.")
-    return {"hint": selected_hint, "level": data.hint_level}
+    cur.execute("SELECT COUNT(*), COUNT(*) FILTER (WHERE is_correct = TRUE) FROM student_submissions;")
+    total, correct = cur.fetchone()
+    accuracy = round((correct / total * 100), 1) if total > 0 else 0
+
+    cur.execute("""
+        SELECT misconception_tag, COUNT(*) as count 
+        FROM student_submissions 
+        WHERE misconception_tag IS NOT NULL 
+        GROUP BY misconception_tag 
+        ORDER BY count DESC 
+        LIMIT 3;
+    """)
+    top_misconceptions = [{"tag": row[0], "count": row[1]} for row in cur.fetchall()]
+
+    cur.close()
+    conn.close()
+
+    return {
+        "total_submissions": total,
+        "class_accuracy": accuracy,
+        "top_misconceptions": top_misconceptions
+    }
