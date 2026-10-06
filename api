@@ -2,4 +2,3 @@ axiom-ai-tutor/
 ├── index.html          # Your existing frontend code
 ├── requirements.txt    # Python dependencies
 └── api/
-    └── index.py        # Your FastAPI backend script
