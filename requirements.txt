@@ -1,6 +1,6 @@
 fastapi
-pydantic
+uvicorn
+supabase
 openai
-numpy
+pydantic
 sympy
-psycopg2-binary
