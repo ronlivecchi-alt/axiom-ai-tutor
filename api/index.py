@@ -1,3 +1,7 @@
+@app.get("/api")
+@app.get("/api/")
+def api_root():
+    return {"message": "Axiom AI Tutor API is live!"}
 import os
 import psycopg2
 from fastapi import FastAPI
