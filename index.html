@@ -491,57 +491,138 @@
         function loadPracticeProblem() {}
         function loadUnitPreset() {}
         function toggleWorkedExample() {}
-        async function submitStudentAnswer() {
-            // Grab the input text area and feedback box elements from the DOM
-            const inputField = document.getElementById('practice-user-answer') || document.querySelector('textarea');
-            const feedbackBox = document.getElementById('practice-feedback-box');
-            
-            if (!inputField || !inputField.value.trim()) return;
+<!-- Script section -->
+    <script>
+        // 1. Initialize Lucide Icons
+        if (window.lucide) {
+            lucide.createIcons();
+        }
 
-            // Show loading state to the user
-            if (feedbackBox) {
-                feedbackBox.classList.remove('hidden');
-                feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-blue-50 text-blue-800 border border-blue-200";
-                feedbackBox.innerText = "Analyzing answer with Axiom AI...";
+        // 2. Switch between Teacher Dashboard and Student Practice Portal
+        function switchViewMode(mode) {
+            const studentView = document.getElementById('view-student-practice');
+            const teacherOverview = document.getElementById('tab-overview');
+            const teacherBtn = document.getElementById('mode-btn-teacher');
+            const studentBtn = document.getElementById('mode-btn-student');
+
+            if (mode === 'student') {
+                if (studentView) studentView.classList.remove('hidden');
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+                if (studentBtn) studentBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                if (teacherBtn) teacherBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+            } else {
+                if (studentView) studentView.classList.add('hidden');
+                if (teacherOverview) teacherOverview.classList.remove('hidden');
+                if (teacherBtn) teacherBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+                if (studentBtn) studentBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
             }
+        }
+
+        // 3. Switch between Teacher Navigation Tabs
+        function switchTab(tabId) {
+            const studentView = document.getElementById('view-student-practice');
+            if (studentView) studentView.classList.add('hidden');
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            
+            const selectedTab = document.getElementById('tab-' + tabId);
+            if (selectedTab) {
+                selectedTab.classList.remove('hidden');
+            }
+        }
+
+        // Placeholders to prevent click errors
+        function loadPracticeProblem() {}
+        function loadUnitPreset() {}
+        function toggleWorkedExample() {}
+
+        // 4. Student Answer Submission Logic
+        async function submitStudentAnswer() {
+            const answerInput = document.getElementById("studentAnswerInput");
+            const feedbackContainer = document.getElementById("feedbackBox");
+            
+            if (!answerInput || !answerInput.value.trim()) return;
+
+            const payload = {
+                student_id: "STU-101",
+                question_id: "MYP-UNIT2-Q1",
+                user_answer: answerInput.value.trim()
+            };
 
             try {
-                // Send student answer to the Python backend API
-                const response = await fetch('/api/evaluate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        problem_id: "prob_1",
-                        user_answer: inputField.value
-                    })
+                if (feedbackContainer) {
+                    feedbackContainer.innerHTML = `<span class="text-gray-400">Evaluating response...</span>`;
+                }
+
+                const response = await fetch("/api/evaluate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
+                if (!response.ok) throw new Error("API request failed");
 
-                // Update UI based on API response
-                if (feedbackBox) {
-                    if (result.correct) {
-                        feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-emerald-50 text-emerald-800 border border-emerald-200";
-                        feedbackBox.innerText = "Correct! " + result.feedback;
+                const data = await response.json();
+
+                if (feedbackContainer) {
+                    if (data.is_correct) {
+                        feedbackContainer.innerHTML = `
+                            <div class="p-4 bg-green-500/10 border border-green-500/30 rounded-lg text-green-400">
+                                <p class="font-bold">Correct!</p>
+                                <p>${data.feedback}</p>
+                            </div>`;
                     } else {
-                        feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-amber-50 text-amber-800 border border-amber-200";
-                        feedbackBox.innerText = "Try again: " + result.feedback;
+                        feedbackContainer.innerHTML = `
+                            <div class="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+                                <p class="font-bold">Needs Review</p>
+                                <p>${data.feedback}</p>
+                                ${data.misconception_tag ? `<span class="inline-block mt-2 text-xs bg-red-900/40 text-red-300 px-2 py-1 rounded">Tag: ${data.misconception_tag}</span>` : ''}
+                            </div>`;
                     }
                 }
+
+                fetchTeacherMetrics();
+
             } catch (error) {
-                if (feedbackBox) {
-                    feedbackBox.className = "p-3.5 rounded-xl text-xs font-medium space-y-1 bg-red-50 text-red-800 border border-red-200";
-                    feedbackBox.innerText = "Error connecting to AI API endpoint.";
+                console.error("Evaluation error:", error);
+                if (feedbackContainer) {
+                    feedbackContainer.innerHTML = `<span class="text-red-400">Error processing submission. Please try again.</span>`;
                 }
             }
         }
-        function sendPracticeChatMessage() {}
-        function openInviteModal() {}
-        function toggleAccessibilityPanel() {}
-        function readQuestionAloud() {}
 
-        // Initialize Lucide Icons
-        lucide.createIcons();
+        // 5. Teacher Dashboard Metrics Fetching
+        async function fetchTeacherMetrics() {
+            try {
+                const response = await fetch("/api/metrics");
+                if (!response.ok) return;
+
+                const metrics = await response.json();
+
+                const accuracyElement = document.getElementById("classAccuracyMetric");
+                if (accuracyElement) accuracyElement.innerText = `${metrics.class_accuracy}%`;
+
+                const submissionsElement = document.getElementById("totalSubmissionsMetric");
+                if (submissionsElement) submissionsElement.innerText = metrics.total_submissions;
+
+                const misconceptionList = document.getElementById("topMisconceptionsList");
+                if (misconceptionList && metrics.top_misconceptions) {
+                    if (metrics.top_misconceptions.length === 0) {
+                        misconceptionList.innerHTML = `<li class="text-gray-400 text-sm">No misconceptions logged yet.</li>`;
+                    } else {
+                        misconceptionList.innerHTML = metrics.top_misconceptions
+                            .map(m => `
+                                <li class="flex justify-between items-center py-1 border-b border-gray-700/50">
+                                    <span class="text-sm font-medium text-gray-200">${m.tag}</span>
+                                    <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">${m.count} students</span>
+                                </li>
+                            `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching metrics:", error);
+            }
+        }
+
+        // Run initial metrics load when DOM is ready
+        document.addEventListener("DOMContentLoaded", fetchTeacherMetrics);
     </script>
-</body>
-</html>
