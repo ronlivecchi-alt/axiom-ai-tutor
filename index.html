@@ -460,169 +460,138 @@
         function loadUnitPreset() {}
         function toggleWorkedExample() {}
 <!-- Script section -->
-    <script>
-        // 1. Initialize Lucide Icons
-        if (window.lucide) {
-            lucide.createIcons();
-        }
+    <!-- Script section -->
+<script>
+    // 1. Placeholder functions to prevent click errors
+    function loadPracticeProblem() {}
+    function loadUnitPreset() {}
+    function toggleWorkedExample() {}
 
-        // 2. Switch between Teacher Dashboard and Student Practice Portal
-        function switchViewMode(mode) {
-            const studentView = document.getElementById('view-student-practice');
-            const teacherOverview = document.getElementById('tab-overview');
-            const teacherBtn = document.getElementById('mode-btn-teacher');
-            const studentBtn = document.getElementById('mode-btn-student');
+    // 2. Initialize Lucide Icons
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 
-            if (mode === 'student') {
-                if (studentView) studentView.classList.remove('hidden');
-                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-                if (studentBtn) studentBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-                if (teacherBtn) teacherBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
-            } else {
-                if (studentView) studentView.classList.add('hidden');
-                if (teacherOverview) teacherOverview.classList.remove('hidden');
-                if (teacherBtn) teacherBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
-                if (studentBtn) studentBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
-            }
-        }
+    // 3. Switch between Teacher Dashboard and Student Practice Portal
+    function switchViewMode(mode) {
+        const studentView = document.getElementById('view-student-practice');
+        const teacherOverview = document.getElementById('tab-overview');
+        const teacherBtn = document.getElementById('mode-btn-teacher');
+        const studentBtn = document.getElementById('mode-btn-student');
 
-        // 3. Switch between Teacher Navigation Tabs
-        function switchTab(tabId) {
-            const studentView = document.getElementById('view-student-practice');
-            if (studentView) studentView.classList.add('hidden');
+        if (mode === 'student') {
+            if (studentView) studentView.classList.remove('hidden');
             document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
-            
-            const selectedTab = document.getElementById('tab-' + tabId);
-            if (selectedTab) {
-                selectedTab.classList.remove('hidden');
-            }
+            if (studentBtn) studentBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+            if (teacherBtn) teacherBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
+        } else {
+            if (studentView) studentView.classList.add('hidden');
+            if (teacherOverview) teacherOverview.classList.remove('hidden');
+            if (teacherBtn) teacherBtn.classList.add('bg-white', 'text-slate-900', 'shadow-sm');
+            if (studentBtn) studentBtn.classList.remove('bg-white', 'text-slate-900', 'shadow-sm');
         }
+    }
 
-// Placeholders to prevent click errors
-function loadPracticeProblem() {}
-function loadUnitPreset() {}
-function toggleWorkedExample() {}
-
-// 1. Fetch Teacher Analytics Metrics
-async function fetchTeacherMetrics() {
-    try {
-        const response = await fetch('/api/metrics');
-        if (!response.ok) throw new Error("Failed to fetch metrics");
-        const metrics = await response.json();
+    // 4. Switch between Teacher Navigation Tabs
+    function switchTab(tabId) {
+        const studentView = document.getElementById('view-student-practice');
+        if (studentView) studentView.classList.add('hidden');
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
         
-        const totalEl = document.getElementById('total-submissions');
-        const accuracyEl = document.getElementById('class-accuracy');
-        const listEl = document.getElementById('misconceptions-list');
-
-        if (totalEl) totalEl.innerText = metrics.total_submissions;
-        if (accuracyEl) accuracyEl.innerText = `${metrics.class_accuracy}%`;
-        
-        if (listEl && metrics.top_misconceptions) {
-            listEl.innerHTML = metrics.top_misconceptions
-                .map(item => `<li>${item.tag}: ${item.count}</li>`)
-                .join('');
-        }
-    } catch (err) {
-        console.error('Error fetching metrics:', err);
-    }
-}
-
-// 2. Student Answer Submission Logic
-async function submitStudentAnswer() {
-    // Make sure this ID matches your <input> or <textarea> in HTML!
-    const answerInput = document.getElementById("studentAnswerInput") || document.getElementById("answer-input");
-    const feedbackContainer = document.getElementById("feedbackBox") || document.getElementById("feedback-box");
-    
-    if (!answerInput || !answerInput.value.trim()) return;
-
-    const payload = {
-        student_id: "STU-101",
-        question_id: "MYP-UNIT2-Q1",
-        user_answer: answerInput.value.trim()
-    };
-
-    try {
-        if (feedbackContainer) {
-            feedbackContainer.innerHTML = `<span class="text-gray-400">Evaluating response...</span>`;
-        }
-
-        const response = await fetch("/api/evaluate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) throw new Error("API request failed");
-
-        const data = await response.json();
-
-        // Display feedback from backend
-        if (feedbackContainer) {
-            feedbackContainer.innerHTML = `<p class="font-semibold ${data.is_correct ? 'text-green-600' : 'text-red-600'}">${data.feedback}</p>`;
-        }
-
-        // Refresh teacher analytics in real-time
-        fetchTeacherMetrics();
-
-    } catch (err) {
-        console.error("Error submitting answer:", err);
-        if (feedbackContainer) {
-            feedbackContainer.innerHTML = `<span class="text-red-500">Error submitting answer. Please try again.</span>`;
+        const selectedTab = document.getElementById('tab-' + tabId);
+        if (selectedTab) {
+            selectedTab.classList.remove('hidden');
         }
     }
-}
 
-    // 3. Attach Event Listener to Submit Button
-    const submitBtn = document.getElementById('submit-btn');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            submitStudentAnswer();
-        });
-    }
+    // 5. Fetch Teacher Analytics Metrics from Supabase Backend
+    async function fetchTeacherMetrics() {
+        try {
+            const response = await fetch("/api/metrics");
+            if (!response.ok) return;
 
-    // 4. Initial Load
-    document.addEventListener('DOMContentLoaded', () => {
-        fetchTeacherMetrics();
-    });
-            }
-        }
+            const metrics = await response.json();
 
-        // 5. Teacher Dashboard Metrics Fetching
-        async function fetchTeacherMetrics() {
-            try {
-                const response = await fetch("/api/metrics");
-                if (!response.ok) return;
+            const accuracyElement = document.getElementById("classAccuracyMetric");
+            if (accuracyElement) accuracyElement.innerText = `${metrics.class_accuracy}%`;
 
-                const metrics = await response.json();
+            const submissionsElement = document.getElementById("totalSubmissionsMetric");
+            if (submissionsElement) submissionsElement.innerText = metrics.total_submissions;
 
-                const accuracyElement = document.getElementById("classAccuracyMetric");
-                if (accuracyElement) accuracyElement.innerText = `${metrics.class_accuracy}%`;
-
-                const submissionsElement = document.getElementById("totalSubmissionsMetric");
-                if (submissionsElement) submissionsElement.innerText = metrics.total_submissions;
-
-                const misconceptionList = document.getElementById("topMisconceptionsList");
-                if (misconceptionList && metrics.top_misconceptions) {
-                    if (metrics.top_misconceptions.length === 0) {
-                        misconceptionList.innerHTML = `<li class="text-gray-400 text-sm">No misconceptions logged yet.</li>`;
-                    } else {
-                        misconceptionList.innerHTML = metrics.top_misconceptions
-                            .map(m => `
-                                <li class="flex justify-between items-center py-1 border-b border-gray-700/50">
-                                    <span class="text-sm font-medium text-gray-200">${m.tag}</span>
-                                    <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">${m.count} students</span>
-                                </li>
-                            `).join('');
-                    }
+            const misconceptionList = document.getElementById("topMisconceptionsList");
+            if (misconceptionList && metrics.top_misconceptions) {
+                if (metrics.top_misconceptions.length === 0) {
+                    misconceptionList.innerHTML = `<li class="text-gray-400 text-sm">No misconceptions logged yet.</li>`;
+                } else {
+                    misconceptionList.innerHTML = metrics.top_misconceptions
+                        .map(m => `
+                            <li class="flex justify-between items-center py-1 border-b border-gray-700/50">
+                                <span class="text-sm font-medium text-gray-200">${m.tag}</span>
+                                <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full">${m.count} students</span>
+                            </li>
+                        `).join('');
                 }
-            } catch (error) {
-                console.error("Error fetching metrics:", error);
+            }
+        } catch (error) {
+            console.error("Error fetching metrics:", error);
+        }
+    }
+
+    // 6. Student Answer Submission Logic
+    async function submitStudentAnswer() {
+        const answerInput = document.getElementById("studentAnswerInput") || document.getElementById("answer-input");
+        const feedbackContainer = document.getElementById("feedbackBox") || document.getElementById("feedback-box");
+        
+        if (!answerInput || !answerInput.value.trim()) return;
+
+        const payload = {
+            student_id: "STU-101",
+            question_id: "MYP-UNIT2-Q1",
+            user_answer: answerInput.value.trim()
+        };
+
+        try {
+            if (feedbackContainer) {
+                feedbackContainer.innerHTML = `<span class="text-gray-400">Evaluating response...</span>`;
+            }
+
+            const response = await fetch("/api/evaluate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error("API request failed");
+
+            const data = await response.json();
+
+            if (feedbackContainer) {
+                feedbackContainer.innerHTML = `<p class="font-semibold ${data.is_correct ? 'text-green-600' : 'text-red-600'}">${data.feedback}</p>`;
+            }
+
+            // Instantly refresh analytics on teacher view
+            fetchTeacherMetrics();
+
+        } catch (err) {
+            console.error("Error submitting answer:", err);
+            if (feedbackContainer) {
+                feedbackContainer.innerHTML = `<span class="text-red-500">Error submitting answer. Please try again.</span>`;
             }
         }
+    }
 
-        // Run initial metrics load when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            fetchTeacherMetrics();
-        });
-    </script>
+    // 7. Initialization and Event Listeners
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load metrics immediately on page load
+        fetchTeacherMetrics();
+
+        // Attach listener to submit button
+        const submitBtn = document.getElementById('submit-btn');
+        if (submitBtn) {
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                submitStudentAnswer();
+            });
+        }
+    });
+</script>
